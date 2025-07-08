@@ -32,23 +32,11 @@ public class GML321ParserImpl implements GMLParser {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GML321ParserImpl.class);
   private static final JAXBContext GML_321_JAXB_CONTEXT;
-  private static final ThreadLocal<Unmarshaller> GML_321_UNMARSHALLER;
 
   static {
     try {
       GML_321_JAXB_CONTEXT = JAXBContext.newInstance(AbstractGeometryType.class);
       LOGGER.debug("Created JAXB context");
-      GML_321_UNMARSHALLER = new ThreadLocal<>() {
-        @Override
-        protected Unmarshaller initialValue() {
-          try {
-            return GML_321_JAXB_CONTEXT.createUnmarshaller();
-          } catch (JAXBException ex) {
-            LOGGER.error(ex.getMessage(), ex);
-            throw new IllegalStateException(ex);
-          }
-        }
-      };
     } catch (JAXBException ex) {
       LOGGER.error("Could not create JAXB context. {}", ex.getMessage(), ex);
       throw new IllegalStateException("Could not create JAXB context", ex);
@@ -114,9 +102,9 @@ public class GML321ParserImpl implements GMLParser {
   }
 
   private AbstractGeometryType parseGeometryFromGML(Reader reader) throws JAXBException {
+    Unmarshaller gml321Unmarshaller = GML_321_JAXB_CONTEXT.createUnmarshaller();
     JAXBElement<AbstractGeometryType> unmarshalled =
-        (JAXBElement<AbstractGeometryType>) GML_321_UNMARSHALLER.get()
-            .unmarshal(new StreamSource(reader));
+        gml321Unmarshaller.unmarshal(new StreamSource(reader), AbstractGeometryType.class);
     return unmarshalled.getValue();
   }
 
